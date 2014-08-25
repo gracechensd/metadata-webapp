@@ -1,0 +1,3 @@
+webapp is to be placed within a directory in Apache Tomcat’s webapps folder. Tomcat should be configured so that the application can be started and accessed through localhost:8080/(directory name).
+
+Application accesses local database (which should have been created and populated by the XMLParser) for files based on keywords OR exact ontology URIs. Displays list of files with hyperlinks to their location on hydro10.sdsc.edu.
