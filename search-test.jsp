@@ -95,6 +95,7 @@
 			<button type="submit" class="btn btn-success">Submit</button>
 			<button type="reset" class="btn btn-danger">Reset</button>
 			</form>
+			<p class="help-block">Search up to three keywords or ontologies, separated by commas.</p>
 		<br />
 		
 	<% if (request.getParameter("search") != null && request.getParameter("search") != "") { %>
@@ -139,31 +140,47 @@
 		// Generate the SQL query.
 		String query = "";
 		int searchCount = 0;
+		String[] searches = new String[3]; //can search up to 3 keywords
 		
-		if (request.getParameter("search").contains(",")) {
-			String[] parts = request.getParameter("search").split("\\s*,\\s*");
-			searchCount = parts.length;
-			for (int i = 0; i < parts.length; i++) {
-				out.println(parts[i]);
+		String[] parts = request.getParameter("search").split("\\s*,\\s*");
+		for (int i = 0; i < parts.length; i++) {
+			searches[i] = parts[i];
+			searchCount++;
+			if (i == 2) { //if already filled up all three keywords
+				break;
 			}
 		}
 		
-		String select = ("SELECT * FROM keywords s1");
-		String where = (" WHERE s1.keyword = ?");
-		
+		//chooses correct statement based on number of keywords/ontologies input
 		if (request.getParameter("type").equals("keyword")) {
-			query = (select + where);
-			// query = "SELECT * FROM keywords2 s1, keywords2 s2 WHERE s1.file_name = s2.file_name AND s1.keyword = \"rocks\" AND s2.keyword = \"geology\" ";
-			// query = "SELECT * FROM keywords2 s1 WHERE s1.keyword = ?";
+			if (searchCount == 1) {
+			query = "SELECT * FROM keywords2 s1 WHERE s1.keyword = ?";
+			}
+			else if (searchCount == 2) {
+			query = "SELECT * FROM keywords2 s1, keywords2 s2 WHERE s1.file_name = s2.file_name AND s1.keyword = ? AND s2.keyword = ? ";
+			}
+			else {
+			query = "SELECT * FROM keywords2 s1, keywords2 s2, keywords2 s3 WHERE s1.file_name = s2.file_name AND s2.file_name = s3.file_name AND s1.keyword = ? AND s2.keyword = ? AND s3.keyword = ? ";
+			}
 		}
 		else if (request.getParameter("type").equals("ontology")) {
-			query = "SELECT * FROM ontologies2 WHERE ontology LIKE ?";
+			if (searchCount == 1) {
+			query = "SELECT * FROM ontologies2 s1 WHERE s1.ontology LIKE ?";
+			}
+			else if (searchCount == 2) {
+			query = "SELECT * FROM ontologies2 s1, ontologies2 s2 WHERE s1.file_name = s2.file_name AND s1.ontology = ? AND s2.ontology = ? ";
+			}
+			else {
+			query = "SELECT * FROM ontologies2 s1, ontologies2 s2, keywords2 s3 WHERE s1.file_name = s2.file_name AND s2.file_name = s3.file_name AND s1.ontology = ? AND s2.ontology = ? AND s3.ontology = ? ";
+			}
 		}
 	
-		int count = 0;
-	
 		PreparedStatement sqlStatement = conn.prepareStatement(query);
-		sqlStatement.setString(1, request.getParameter("search"));
+		for (int i = 0; i < searchCount; i++) {
+			sqlStatement.setString(i+1, searches[i]); //inputs correct number of search terms based on searchCount
+		}
+		
+		int count = 0;
 
 		// Get the query results and display them.
 		ResultSet sqlResult = sqlStatement.executeQuery();
